@@ -9,7 +9,6 @@
 int main()
 {
 	const int N = (int)1e5;
-	
 	{
 		std::vector<std::future<int>> results;
 		auto start = std::clock();
