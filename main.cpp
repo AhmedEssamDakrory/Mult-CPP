@@ -47,7 +47,6 @@ int main()
 		for (auto&& res : results)
 		{
 			res.wait();
-			std::cout << res.get();
 		}
 
 		auto end = std::clock();
