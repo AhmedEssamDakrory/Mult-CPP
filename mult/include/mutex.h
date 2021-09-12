@@ -3,12 +3,14 @@
 
 namespace mult 
 {
-    typedef struct Mutex
+    class Mutex
     {
+    private:
         std::atomic<bool> lockFlag{false};
-    } Mutex;
 
-    void mutex_lock(Mutex& mutex);
+    public:
+        void lock();
+        void unlock();
 
-    void mutex_unlock(Mutex& mutex);
+    };
 }
