@@ -1,39 +1,58 @@
 #include <iostream>
-#include "mult/include/mutex.h"
 #include <thread>
 #include <chrono>
+#include <vector>
 
+#include "mult/include/mutex.h"
+#include "mult/include/thread_pool.h"
 
 int main()
 {
-    mult::Mutex mtx;
-    int cnt = 0;
+	const int N = (int)1e5;
+	
+	{
+		std::vector<std::future<int>> results;
+		auto start = std::clock();
 
-    std::thread t1([&](){
-        
-        for (int i = 0; i < 100; ++i)
-        {
-            mult::mutex_lock(mtx);
-            cnt = cnt + 1;
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            mult::mutex_unlock(mtx);
-        }
-    });
+		for (int i = 0; i < N; ++i)
+		{
+			std::packaged_task<int()> task([]() {
+				return 10;
+			});
+			auto res = task.get_future();
+			results.emplace_back(std::move(res));
+			std::thread(std::move(task)).detach();
+		}
 
-    std::thread t2([&](){
-        
-        for (int i = 0 ; i < 100; ++i)
-        {
-            mult::mutex_lock(mtx);
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
-            cnt = cnt + 2;
-            mult::mutex_unlock(mtx);
-        }
-        
-    });
+		for (auto&& res : results)
+		{
+			res.wait();
+		}
 
-    t1.join();
-    t2.join();
+		auto end = std::clock();
+		std::cout << "total time: " << (end - start) / CLOCKS_PER_SEC << std::endl;
+	}
 
-    std::cout << "cnt: " << cnt << std::endl;
+	{
+		std::vector<std::future<int>> results;
+		auto start = std::clock();
+		mult::Thread_Pool tpool(100);
+
+		for (int i = 0; i < N; ++i)
+		{
+			auto res = tpool.add_task([]() { return 7; });
+			results.emplace_back(std::move(res));
+		}
+
+		for (auto&& res : results)
+		{
+			res.wait();
+			std::cout << res.get();
+		}
+
+		auto end = std::clock();
+		std::cout << "total time: " << (end - start) / CLOCKS_PER_SEC << std::endl;
+	}
+
+	return 0;
 }
